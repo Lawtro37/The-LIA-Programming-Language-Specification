@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>LIA Programming Language v1.0.0 Specification (Draft)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+ :root {
+  --bg:#ffffff; --fg:#1d1f21; --accent:#275dad; --code-bg:#f5f7fa; --rule:#d0d7de;
+  --mono: "Consolas", "SFMono-Regular", Menlo, monospace; --sans:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", Helvetica, Arial, sans-serif;
+ }
+ html { font-family:var(--sans); background:var(--bg); color:var(--fg); line-height:1.45; }
+ body { margin:24px auto; max-width:1200px; padding:0 20px 80px; }
+ h1,h2,h3,h4 { line-height:1.2; font-weight:600; }
+ h1 { font-size:2rem; margin:.2em 0 .4em; }
+ h2 { border-bottom:1px solid var(--rule); padding-bottom:4px; margin-top:2.2em; }
+ h3 { margin-top:1.8em; }
+ p { margin:0 0 1em; }
+ a { color:var(--accent); text-decoration:none; }
+ a:hover { text-decoration:underline; }
+ hr { border:0; border-top:1px solid var(--rule); margin:2.5em 0; }
+ code, pre { font-family:var(--mono); font-size:0.9rem; }
+ pre { background:var(--code-bg); padding:12px 14px; border:1px solid var(--rule); border-radius:6px; overflow:auto; }
+ code { background:var(--code-bg); padding:2px 5px; border-radius:4px; }
+ ul,ol { padding-left:1.6em; }
+ li { margin:.25em 0; }
+ .lead { font-size:1rem; } 
+ .masthead { display:flex; gap:18px; align-items:center; }
+ .masthead img { max-width:160px; height:auto; }
+ .meta { font-size:.85rem; color:#555; line-height:1.4; }
+ .status { font-size:.8rem; padding:.35em .6em; border:1px solid var(--rule); border-radius:4px; background:#eef2f6; display:inline-block; margin-top:.5em; }
+ .keyword-list code { margin:2px 4px 2px 0; display:inline-block; }
+ table { border-collapse:collapse; border:1px solid var(--rule); width:100%; margin:1em 0; }
+ th, td { border:1px solid var(--rule); padding:6px 8px; text-align:left; }
+ .small { font-size:.8rem; }
+ .toc { background:var(--code-bg); border:1px solid var(--rule); padding:10px 14px; border-radius:6px; }
+ .toc a { text-decoration:none; }
+ .toc ul { list-style:none; margin:0; padding-left:0; }
+ .toc li { margin:.3em 0; }
+ .section-anchor { color:inherit; text-decoration:none; }
+ .section-anchor:hover { text-decoration:underline; }
+ .note { background:#fff8e1; border:1px solid #f3d27a; padding:.7em .9em; border-radius:6px; }
+</style>
+</head>
+<body>
+<header class="masthead">
+  <img src="logo.png" alt="LIA Logo" />
+  <div>
+    <h1>LIA Programming Language v1.0.0 Specification <span style="font-size:60%; font-weight:400;">(Draft)</span></h1>
+    <div class="meta">Revision: 1<br/>Release Date: DD/MM/YYYY<br/>Author: Lawton Kelly</div>
+    <div class="status">Status: Draft – Incomplete (additional sections planned)</div>
+  </div>
+</header>
+<hr/>
+<p class="lead">This document describes the target core language specification for LIA, not necessarily the current implementation state.</p>
+<div class="note"><strong>NOTE:</strong> This draft is incomplete; some aspects remain unspecified or experimental.</div>
+<br>
+<nav class="toc" aria-label="Table of Contents">
+  <strong>Contents</strong>
+  <ul>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#lexical-structure">1. Lexical Structure</a></li>
+    <li><a href="#types">2. Types</a></li>
+    <li><a href="#variables">3. Variables</a></li>
+    <li><a href="#statements">4. Statements</a></li>
+    <li><a href="#functions">5. Functions</a></li>
+    <li><a href="#objects">6. Objects</a></li>
+    <li><a href="#arrays">7. Arrays</a></li>
+    <li><a href="#casting">8. Casting</a></li>
+    <li><a href="#import-system">9. Import System</a></li>
+    <li><a href="#memory-management">10. Memory Management</a></li>
+    <li><a href="#runtime">11. Runtime / Execution Model</a></li>
+    <li><a href="#error-handling">12. Error Handling</a></li>
+    <li><a href="#grammar">13. Grammar</a></li>
+    <li><a href="#precedence">14. Operator Precedence</a></li>
+    <li><a href="#native-interop">15. Native Interop</a></li>
+    <li><a href="#compliance-notes">16. Compliance Notes</a></li>
+  </ul>
+</nav>
+
+<section id="introduction">
+  <h2>Introduction</h2>
+  <p>This specification defines the normative syntax, semantics, and external interface of the LIA programming language. Its goal is to provide a precise, implementation‑agnostic contract for lexical elements, grammar, types, runtime constructs, memory directives, module importing, and native interop.</p>
+  <p><strong>Scope:</strong> Core language and required runtime behaviors.<br/>
+     <strong>Non‑scope:</strong> Tooling, build systems, optimization strategies, debugging facilities, editor integration, and future extensions.</p>
+  <p><strong>Conformance:</strong> An implementation is conforming if it: (1) accepts all valid programs; (2) rejects invalid input with a diagnostic; (3) preserves defined evaluation order and side‑effects; (4) implements specified type/value categories.</p>
+  <p><strong>Undefined Behavior:</strong> Constructs not explicitly covered (e.g. accessing missing object fields) are undefined; implementations may terminate or produce implementation‑specific results.</p>
+  <p><strong>Versioning:</strong> This draft targets v1.0.0; backward‑incompatible post‑ratification changes require a major version bump.</p>
+  <p><strong>Terminology:</strong> “Must/Shall” = mandatory; “Should” = recommended; “May” = optional; “Undefined” = intentionally unspecified; “LIA-lang” = the LIA Programming Language.</p>
+  <p>Examples are illustrative; formal rules take precedence on conflict.</p>
+</section>
+
+<section id="lexical-structure">
+  <h2>1. Lexical Structure</h2>
+  <p><strong>Character set:</strong> ASCII (string contents = raw bytes).<br/>
+     <strong>Whitespace:</strong> space, tab, CR, LF (insignificant outside strings).<br/>
+     <strong>Comments:</strong> <code>//</code> to end of line.</p>
+  <h3>1.1 Identifiers</h3>
+  <p>Pattern: <code>[A-Za-z_][A-Za-z0-9_]*</code>; case‑sensitive; keywords excluded.</p>
+  <h3>1.2 Keywords</h3>
+  <p class="keyword-list">
+    <code>function</code><code>var</code><code>const</code><code>return</code><code>if</code><code>else</code><code>while</code><code>free</code><code>import</code><code>true</code><code>false</code><code>null</code><code>void</code><code>bool</code><code>int</code><code>float</code><code>char</code><code>string</code>
+  </p>
+  <h4>Aliases</h4>
+  <p><strong>function:</strong> fn, fun, func, def<br/>
+     <strong>var:</strong> let, local<br/>
+     <strong>const:</strong> final (literal word <code>const</code>)<br/>
+     <strong>free:</strong> delete, pop<br/>
+     <strong>null:</strong> nul<br/>
+     <strong>bool:</strong> boolean</p>
+  <h3>1.3 Literals</h3>
+  <ul>
+    <li><strong>Integer:</strong> decimal digits; default signed 32‑bit.</li>
+    <li><strong>Float:</strong> digits with decimal point.</li>
+    <li><strong>String:</strong> <code>"..."</code> (no escapes).</li>
+    <li><strong>Boolean:</strong> <code>true</code> / <code>false</code>.</li>
+    <li><strong>Null:</strong> <code>null</code>.</li>
+    <li><strong>Object:</strong> <code>{ ... }</code>.</li>
+    <li><strong>Array:</strong> <code>[type? element (, element)*]</code> (optional leading inline type).</li>
+  </ul>
+  <h3>1.4 Operators</h3>
+  <p>Arithmetic: <code>+ - * /</code><br/>
+     Comparison: <code>==</code><br/>
+     Assignment: <code>=</code><br/>
+     Unary: prefix <code>+ -</code><br/>
+     Index: <code>ident[expression]</code><br/>
+     Member access placeholder (not active in current syntax).</p>
+  <h3>1.5 Delimiters</h3>
+  <p><code>() [] { } , :</code></p>
+</section>
+
+<section id="types">
+  <h2>2. Types</h2>
+  <p>Primitive core: <code>int&lt;S&gt;</code>, <code>uint&lt;S&gt;</code>, <code>float&lt;S&gt;</code>, <code>char&lt;S&gt;</code>, <code>string</code>, <code>bool</code>, <code>void</code>, <code>null</code>, <code>any</code>. Default size <code>S</code>=32 bits where applicable.</p>
+  <h3>2.1 Sub-type Aliases</h3>
+  <p>Default integer width: 32 bits (alias <code>int</code> = <code>int32</code>).</p>
+  <h4>Integers</h4>
+  <p>8: int8 / i8 / byte &nbsp; | &nbsp; uint8 / u8 / ubyte<br/>
+     16: int16 / i16 / short &nbsp; | &nbsp; uint16 / u16 / ushort<br/>
+     32: int32 / i32 (alias int) &nbsp; | &nbsp; uint32 / u32<br/>
+     64: int64 / i64 &nbsp; | &nbsp; uint64 / u64</p>
+  <h4>Floats</h4>
+  <p>32: float / float32 / f32 / number / num<br/>
+     64: float64 / f64 / double / real</p>
+  <h4>Chars</h4>
+  <p>8: char8 / uchar8<br/>
+     16: char16 / uchar16<br/>
+     32: char / char32 / uchar / uchar32<br/>
+     64: char64 / uchar64</p>
+  <h4>Strings</h4>
+  <p>string / str / text</p>
+  <h3>2.2 Composite</h3>
+  <p>Arrays (dynamic); Objects (anonymous record); Functions (first‑class identifiers, no closures).</p>
+</section>
+
+<section id="variables">
+  <h2>3. Variables</h2>
+  <p>Syntax: <code>var &lt;type&gt; &lt;name&gt; (= expression)?</code><br/>
+     <code>var &lt;type&gt; &lt;name&gt;[index]?</code> (array element assignment after declaration uses assignment).</p>
+  <p><code>const</code> parsed; immutability enforcement nominal. Uninitialized variables = <code>null</code>.</p>
+</section>
+
+<section id="statements">
+  <h2>4. Statements</h2>
+  <p>Variable declaration; expression statement; if/else; while; return; free; import.</p>
+  <p>Blocks: <code>{ statement* }</code> produce internal Program node.</p>
+</section>
+
+<section id="functions">
+  <h2>5. Functions</h2>
+  <p>Syntax: <code>function &lt;return_type&gt; &lt;identifier&gt;(&lt;param_list?&gt;) { block }</code></p>
+  <p>Parameters: <code>&lt;type&gt; &lt;identifier&gt;</code> comma‑separated. Return: <code>return &lt;expression&gt;</code>; void functions may return without expression (produces <code>null</code>). No overloading or defaults.</p>
+</section>
+
+<section id="objects">
+  <h2>6. Objects</h2>
+  <p>Literal: <code>{ &lt;type&gt; &lt;fieldName&gt;: &lt;expression&gt;, ... }</code>; constructs <code>AST::Object(Vec&lt;(Type,String,AST)&gt;)</code>.</p>
+</section>
+
+<section id="arrays">
+  <h2>7. Arrays</h2>
+  <p>Indexed: <code>arr[i]</code>; Literals: <code>[ &lt;optionalType&gt; elem1, elem2, ... ]</code>.</p>
+  <p>Stored as <code>AST::Array(Type, Vec&lt;AST&gt;)</code>; element type explicit or inferred <code>Any</code>.</p>
+</section>
+
+<section id="casting">
+  <h2>8. Casting</h2>
+  <p>Call‑style cast: <code>int32(expr)</code> parsed as <code>AST::Call("int32", [expr])</code>.</p>
+</section>
+
+<section id="import-system">
+  <h2>9. Import System</h2>
+  <p><code>import "relative/or/absolute/path.lia"</code>: loads, tokenizes, inlines AST (recursive). Optional experimental dynamic library: <code>import "library.llb"</code>.</p>
+  <p>Search path relative to current working directory. No cycle detection.</p>
+</section>
+
+<section id="memory-management">
+  <h2>10. Memory Management</h2>
+  <p><code>free(a, b, c)</code> builds <code>AST::Free(Vec&lt;Identifier&gt;)</code>; runtime decides disposal semantics.</p>
+</section>
+
+<section id="runtime">
+  <h2>11. Runtime / Execution Model</h2>
+  <ul>
+    <li>Tree‑walk interpreter</li>
+    <li>Optimizer stage</li>
+    <li>Serialization: <code>.ast</code></li>
+    <li>Native extension (experimental): dynamic function registration via DLL / <code>.llb</code></li>
+  </ul>
+</section>
+
+<section id="error-handling">
+  <h2>12. Error Handling</h2>
+  <p>Current: panic on parse errors (immediate abort).</p>
+</section>
+
+<section id="grammar">
+  <h2>13. Grammar (EBNF Approximation)</h2>
+  <pre><code>program          ::= statement*
+statement        ::= function_decl
+                   | var_decl
+                   | if_stmt
+                   | while_stmt
+                   | return_stmt
+                   | free_stmt
+                   | import_stmt
+                   | expression
+function_decl    ::= "function" type identifier "(" param_list? ")" block
+param_list       ::= param ("," param)*
+param            ::= type identifier
+var_decl         ::= "var" ("const")? type identifier ("=" expression)?
+if_stmt          ::= "if" "(" expression ")" block ("else" block)?
+while_stmt       ::= "while" "(" expression ")" block
+return_stmt      ::= "return" expression
+free_stmt        ::= "free" "(" ident_or_index ("," ident_or_index)* ")"
+import_stmt      ::= "import" string_literal
+block            ::= "{" statement* "}"
+expression       ::= assignment
+assignment       ::= binary ("=" assignment)?
+binary           ::= unary (op unary)*        # op precedence (* /, + -, ==)
+unary            ::= ("+" | "-" | cast_prefix) unary | primary
+cast_prefix      ::= type "("
+primary          ::= number
+                   | string_literal
+                   | "true" | "false" | "null"
+                   | identifier call_or_index?
+                   | array_literal
+                   | object_literal
+                   | "(" expression ")"
+call_or_index    ::= "(" arg_list? ")" | "[" expression "]"
+arg_list         ::= expression ("," expression)*
+array_literal    ::= "[" type? (expression ("," expression)*)? "]"
+object_literal   ::= "{" object_field ("," object_field)* "}"
+object_field     ::= type identifier ":" expression
+ident_or_index   ::= identifier ("[" expression "]")?
+type             ::= "int" size? | "uint" size? | "float" size? | "char" size? | "string" | "bool" | "void" | "any"
+size             ::= integer_literal</code></pre>
+</section>
+
+<section id="precedence">
+  <h2>14. Operator Precedence (High → Low)</h2>
+  <ol>
+    <li>Unary (<code>+ - (cast)</code>)</li>
+    <li>Multiplicative (<code>* /</code>)</li>
+    <li>Additive (<code>+ -</code>)</li>
+    <li>Equality (<code>==</code>)</li>
+    <li>Assignment (<code>=</code>, right‑associative)</li>
+  </ol>
+</section>
+
+<section id="native-interop">
+  <h2>15. Native Interop</h2>
+  <p>Dynamic library import (if enabled) expects at minimum: <code>extern "C" fn register_functions()</code>. Callback variant <code>register_functions_with_callback</code> may also be recognized.</p>
+</section>
+
+<section id="compliance-notes">
+  <h2>16. Compliance Notes</h2>
+  <p>Where implementation and this document differ (e.g. disabled member access), source code is authoritative until harmonised.</p>
+</section>
+
+<hr/>
+<footer class="small">Status: Draft baseline for v1.0.0 core.</footer>
+</body>
+</html>
