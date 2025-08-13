@@ -3,7 +3,7 @@
   <div>
     <h1>The LIA Programming  Language v1.0.0 Specification [DRAFT]</h1>
     Revision: 1<br>
-    Release Date: DD/MM/YYYY<br>
+    Release Date: 13/8/2025<br>
     Author: Lawton Kelly
   </div>
 </div>
