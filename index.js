@@ -47,7 +47,7 @@
   <img src="logo.png" alt="LIA Logo" />
   <div>
     <h1>LIA Programming Language v1.0.0 Specification <span style="font-size:60%; font-weight:400;">(Draft)</span></h1>
-    <div class="meta">Revision: 1<br/>Release Date: DD/MM/YYYY<br/>Author: Lawton Kelly</div>
+    <div class="meta">Revision: 1<br/>Release Date: 13/8/2025<br/>Author: Lawton Kelly</div>
     <div class="status">Status: Draft – Incomplete (additional sections planned)</div>
   </div>
 </header>
