@@ -40,6 +40,10 @@
  .section-anchor { color:inherit; text-decoration:none; }
  .section-anchor:hover { text-decoration:underline; }
  .note { background:#fff8e1; border:1px solid #f3d27a; padding:.7em .9em; border-radius:6px; }
+ ol.compact { margin:.5em 0 1.2em 1.35em; }
+ dl.terms { margin:.6em 0 1.4em; }
+ dl.terms dt { font-weight:600; }
+ dl.terms dd { margin:0 0 .45em 1.1em; }
 </style>
 </head>
 <body>
@@ -81,12 +85,29 @@
 <section id="introduction">
   <h2>Introduction</h2>
   <p>This specification defines the normative syntax, semantics, and external interface of the LIA programming language. Its goal is to provide a precise, implementation‑agnostic contract for lexical elements, grammar, types, runtime constructs, memory directives, module importing, and native interop.</p>
-  <p><strong>Scope:</strong> Core language and required runtime behaviors.<br/>
-     <strong>Non‑scope:</strong> Tooling, build systems, optimization strategies, debugging facilities, editor integration, and future extensions.</p>
-  <p><strong>Conformance:</strong> An implementation is conforming if it: (1) accepts all valid programs; (2) rejects invalid input with a diagnostic; (3) preserves defined evaluation order and side‑effects; (4) implements specified type/value categories.</p>
-  <p><strong>Undefined Behavior:</strong> Constructs not explicitly covered (e.g. accessing missing object fields) are undefined; implementations may terminate or produce implementation‑specific results.</p>
-  <p><strong>Versioning:</strong> This draft targets v1.0.0; backward‑incompatible post‑ratification changes require a major version bump.</p>
-  <p><strong>Terminology:</strong> “Must/Shall” = mandatory; “Should” = recommended; “May” = optional; “Undefined” = intentionally unspecified; “LIA-lang” = the LIA Programming Language.</p>
+  <dl class="terms">
+    <dt>Scope</dt><dd>Core language and required runtime behaviors.</dd>
+    <dt>Non‑scope</dt><dd>Tooling, build systems, optimization strategies, debugging facilities, editor integration, and future extensions.</dd>
+  </dl>
+  <h3>Conformance</h3>
+  <ol class="compact">
+    <li>Accepts all grammatically valid programs defined herein.</li>
+    <li>Rejects (with a diagnostic) any lexically or syntactically invalid input.</li>
+    <li>Preserves the specified evaluation order and side‑effects.</li>
+    <li>Implements the defined type and value categories (including <code>null</code> and <code>void</code> semantics).</li>
+  </ol>
+  <h3>Undefined Behavior</h3>
+  <p>Constructs not explicitly covered (e.g. accessing missing object fields) are undefined; implementations may terminate execution or produce implementation‑specific results.</p>
+  <h3>Versioning</h3>
+  <p>This draft targets v1.0.0. Backward‑incompatible changes after ratification require a major version increment.</p>
+  <h3>Terminology</h3>
+  <dl class="terms">
+    <dt>Must / Shall</dt><dd>Mandatory requirement.</dd>
+    <dt>Should</dt><dd>Recommended; strong suggestion but not required for conformance.</dd>
+    <dt>May</dt><dd>Truly optional feature or behavior.</dd>
+    <dt>Undefined</dt><dd>Intentionally unspecified; implementation is not required to diagnose.</dd>
+    <dt>LIA-lang</dt><dd>The LIA Programming Language.</dd>
+  </dl>
   <p>Examples are illustrative; formal rules take precedence on conflict.</p>
 </section>
 
