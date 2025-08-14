@@ -2,9 +2,9 @@
   <img src="logo.png" width="200" alt="LIA Logo">
   <div>
     <h1>The LIA Programming  Language v1.0.0 Specification [DRAFT]</h1>
-    Revision: 1<br>
-    Release Date: 13/8/2025<br>
-    Author: Lawton Kelly
+    Revision: 2<br>
+    Release Date: 14/8/2025<br>
+    Author: Lawton "Lawtro" Kelly
   </div>
 </div>
 
@@ -56,7 +56,7 @@ Pattern: `[A-Za-z_][A-Za-z0-9_]*`
 Case-sensitive. Reserved keywords excluded.
 
 ### 1.2 Keywords
-`function, var, const, return, if, else, while, free, import, true, false, null, void, bool, int, float, char, string`
+`function, class, var, const, return, if, else, while, free, import, true, false, null, void, bool, int, float, string`
 
 #### Aliases
 `function`: `fn, fun, func, def`  
@@ -90,7 +90,6 @@ Case-sensitive. Reserved keywords excluded.
 Primitive core:
 - `int<S>` / `uint<S>` (signed / unsigned integers by size)
 - `float<S>`
-- `char<S>` (signedness encoded similarly to integers)
 - `string`
 - `bool`
 - `void` (function return type only)
@@ -111,12 +110,6 @@ Integers (signed / unsigned):
 Floats:
 - 32: `float, float32, f32, number, num`
 - 64: `float64, f64, double, real`
-
-Chars (signed / unsigned):
-- 8:  `char8` / `uchar8`
-- 16: `char16` / `uchar16`
-- 32: `char, char32` / `uchar, uchar32`
-- 64: `char64` / `uchar64`
 
 Strings: `string, str, text`
 
@@ -178,17 +171,37 @@ Optional (commented / experimental) dynamic library form: `import "library.llb"`
 Search path: relative to current working directory. No cycle detection.
 
 ## 10. Memory Management
-Manual release hook:
-`free(a, b, c)` builds `AST::Free(Vec<Identifier>)`. Runtime decides how to dispose / release.
+Once a scope is exited the scope and its contents are removed and freed from memory.
+The `free()` function removes the inputed variable from the scope and frees the memory.
 
 ## 11. Runtime / Execution Model
-- Tree‑walk interpreter
-- Optimizer stage
-- Serialization: `.ast` (serialized AST)
-- Native extension (experimental): dynamic function registration via DLL / `.llb`.
+LIA-lang is an interpreted programing language meaning execution is handeled by a program that reads in the code and executes it based on its operation.
+LIA uses a Tree‑walk interpreter that executes assembled LIA code.
+LIA code is assembled into an abstract stynax tree and/or serialised into `.ast` file before execution or being bundeled with an interpreter.
+Runtime interpreters are eather embeded into a compiled binary with assembled LIA bytecode or are seperate and read in `.ast` or `.lia` files for execution.
+In the case of a seperate interpreter `.lia` files are parsed into unserialised `.ast` LIA bytecode before being executed
+A seperate interpreter will deserialise `.ast` files before executing theem.
+An embeded interpreter will deserialise the LIA bytecode appended to the end of its file after the `"LIA\xFF` header before executing it.
 
 ## 12. Error Handling
-Current: panic on parse errors (immediate abort).
+Categories:
+
+| Category | Examples | Handling (Typical) |
+| -------- | -------- | ------------------ |
+| Lexical  | Invalid token | Abort parse; diagnostic emitted |
+| Syntax   | Unexpected token / structure | Abort parse with location |
+| Type     | Incompatible assignment | Diagnostic; may abort validation |
+| Runtime (non‑fatal) | Missing library function | Report; attempt continue |
+| Runtime (fatal) | Null dereference (if implemented), internal panic | Terminate with error code |
+
+Standard diagnostic format (illustrative):
+```
+<KIND>: <MESSAGE>
+at <FILEPATH>:<LINE>
+<OPTIONAL EXTRA CONTEXT>
+```
+
+Fatal runtime errors terminate the process with an implementation‑defined exit code. Non‑fatal runtime issues may be logged to stderr or console depending on runtime flags.
 
 ## 13. Grammar (EBNF Approximation)
 ```
@@ -241,7 +254,13 @@ size             ::= integer_literal
 5. Assignment (`=` right-associative)
 
 ## 15. Native Interop
-Dynamic library import (if enabled) expects at minimum: `extern "C" fn register_functions()`. A callback variant `register_functions_with_callback` may also be recognized.
+#### `.dll` files:
+.dll files can be loaded via `import` or the `loadLibrary()` native function
+.dll public functions will be converted to work with LIA-lang placed in the global scope
+#### `.llb` files:
+.llb files can be loaded via `import` or the `loadLibrary()` native function and are esentualy librarys specificly made for LIA-lang.
+.llb files are techincly just .dll files under the hood just with specal functionality to interface with LIA-lang
+
 
 ## 16. Compliance Notes
 Where implementation and this document differ (e.g. disabled member access), the source code is authoritative until harmonised.
