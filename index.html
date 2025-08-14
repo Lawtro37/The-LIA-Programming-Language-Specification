@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <title>LIA Programming Language v1.0.0 Specification (Draft)</title>
+<!--<link rel="icon" type="image/x-icon" href="logo.png" />-->
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
  :root {
@@ -51,13 +52,14 @@
   <img src="logo.png" alt="LIA Logo" />
   <div>
     <h1>LIA Programming Language v1.0.0 Specification <span style="font-size:60%; font-weight:400;">(Draft)</span></h1>
-    <div class="meta">Revision: 1<br/>Release Date: 13/8/2025<br/>Author: Lawton Kelly</div>
+    <!-- Updated meta -->
+    <div class="meta">Revision: 2<br/>Release Date: 14/8/2025<br/>Author: Lawton "Lawtro" Kelly</div>
     <div class="status">Status: Draft – Incomplete (additional sections planned)</div>
   </div>
 </header>
 <hr/>
-<p class="lead">This document describes the target core language specification for LIA, not necessarily the current implementation state.</p>
-<div class="note"><strong>NOTE:</strong> This draft is incomplete; some aspects remain unspecified or experimental.</div>
+<p class="lead">This document describes the core language specifications and not particularly the current state of LIA-lang. This is simply the target of what LIA-lang should be.</p>
+<div class="note"><strong>THIS DOCUMENT IS INCOMPLETE:</strong> more content is planned to be added to this document.</div>
 <br>
 <nav class="toc" aria-label="Table of Contents">
   <strong>Contents</strong>
@@ -84,31 +86,32 @@
 
 <section id="introduction">
   <h2>Introduction</h2>
-  <p>This specification defines the normative syntax, semantics, and external interface of the LIA programming language. Its goal is to provide a precise, implementation‑agnostic contract for lexical elements, grammar, types, runtime constructs, memory directives, module importing, and native interop.</p>
-  <dl class="terms">
-    <dt>Scope</dt><dd>Core language and required runtime behaviors.</dd>
-    <dt>Non‑scope</dt><dd>Tooling, build systems, optimization strategies, debugging facilities, editor integration, and future extensions.</dd>
-  </dl>
-  <h3>Conformance</h3>
-  <ol class="compact">
-    <li>Accepts all grammatically valid programs defined herein.</li>
-    <li>Rejects (with a diagnostic) any lexically or syntactically invalid input.</li>
-    <li>Preserves the specified evaluation order and side‑effects.</li>
-    <li>Implements the defined type and value categories (including <code>null</code> and <code>void</code> semantics).</li>
-  </ol>
-  <h3>Undefined Behavior</h3>
-  <p>Constructs not explicitly covered (e.g. accessing missing object fields) are undefined; implementations may terminate execution or produce implementation‑specific results.</p>
-  <h3>Versioning</h3>
-  <p>This draft targets v1.0.0. Backward‑incompatible changes after ratification require a major version increment.</p>
-  <h3>Terminology</h3>
-  <dl class="terms">
-    <dt>Must / Shall</dt><dd>Mandatory requirement.</dd>
-    <dt>Should</dt><dd>Recommended; strong suggestion but not required for conformance.</dd>
-    <dt>May</dt><dd>Truly optional feature or behavior.</dd>
-    <dt>Undefined</dt><dd>Intentionally unspecified; implementation is not required to diagnose.</dd>
-    <dt>LIA-lang</dt><dd>The LIA Programming Language.</dd>
-  </dl>
-  <p>Examples are illustrative; formal rules take precedence on conflict.</p>
+  <p>This specification defines the normative syntax, semantics, and external interface of the LIA programming language. Its goal is to provide a precise, implementation‑agnostic contract for:</p>
+  <ul>
+    <li>Lexical elements (tokens, literals, keywords)</li>
+    <li>Grammar and syntactic forms</li>
+    <li>Type system and coercion model</li>
+    <li>Runtime constructs (functions, objects, arrays)</li>
+    <li>Memory and lifetime directives (<code>free</code>)</li>
+    <li>Module and external library importing</li>
+    <li>Native interoperability surface</li>
+  </ul>
+  <p><strong>Scope:</strong> Only the core language and its required runtime behaviors.<br/>
+     <strong>Non‑scope:</strong> Tooling, build systems, optimization strategies, debugging facilities, editor integration, and prospective future extensions.</p>
+  <p><strong>Conformance:</strong> An implementation is conforming if it:<br/>
+  1. Accepts all grammatically valid programs defined herein.<br/>
+  2. Rejects (with a diagnostic) any lexically or syntactically invalid input.<br/>
+  3. Preserves the specified evaluation order and side‑effects.<br/>
+  4. Implements the defined type and value categories (including <code>null</code> and <code>void</code> semantics).</p>
+  <p><strong>Undefined Behavior:</strong> Any construct not explicitly covered (e.g. accessing non‑existent object fields) is undefined and may terminate execution or produce implementation‑specific results.</p>
+  <p><strong>Versioning:</strong> This draft targets v1.0.0. Backward incompatible changes after ratification require a major version increment.</p>
+  <p><strong>Terminology:</strong><br/>
+  • “Must” / “Shall”: mandatory.<br/>
+  • “Should”: recommended.<br/>
+  • “May”: optional.<br/>
+  • “Undefined”: intentionally unspecified—implementations are not required to diagnose.<br/>
+  • “LIA-lang”: the LIA Programming Language.</p>
+  <p>All examples are illustrative; if an example conflicts with a formal rule, the rule governs.</p>
 </section>
 
 <section id="lexical-structure">
@@ -120,7 +123,7 @@
   <p>Pattern: <code>[A-Za-z_][A-Za-z0-9_]*</code>; case‑sensitive; keywords excluded.</p>
   <h3>1.2 Keywords</h3>
   <p class="keyword-list">
-    <code>function</code><code>var</code><code>const</code><code>return</code><code>if</code><code>else</code><code>while</code><code>free</code><code>import</code><code>true</code><code>false</code><code>null</code><code>void</code><code>bool</code><code>int</code><code>float</code><code>char</code><code>string</code>
+    <code>function</code><code>class</code><code>var</code><code>const</code><code>return</code><code>if</code><code>else</code><code>while</code><code>free</code><code>import</code><code>true</code><code>false</code><code>null</code><code>void</code><code>bool</code><code>int</code><code>float</code><code>string</code>
   </p>
   <h4>Aliases</h4>
   <p><strong>function:</strong> fn, fun, func, def<br/>
@@ -152,7 +155,7 @@
 
 <section id="types">
   <h2>2. Types</h2>
-  <p>Primitive core: <code>int&lt;S&gt;</code>, <code>uint&lt;S&gt;</code>, <code>float&lt;S&gt;</code>, <code>char&lt;S&gt;</code>, <code>string</code>, <code>bool</code>, <code>void</code>, <code>null</code>, <code>any</code>. Default size <code>S</code>=32 bits where applicable.</p>
+  <p>Primitive core: <code>int&lt;S&gt;</code>, <code>uint&lt;S&gt;</code>, <code>float&lt;S&gt;</code>, <code>string</code>, <code>bool</code>, <code>void</code>, <code>null</code>, <code>any</code>. Default size <code>S</code>=32 bits where applicable.</p>
   <h3>2.1 Sub-type Aliases</h3>
   <p>Default integer width: 32 bits (alias <code>int</code> = <code>int32</code>).</p>
   <h4>Integers</h4>
@@ -163,11 +166,6 @@
   <h4>Floats</h4>
   <p>32: float / float32 / f32 / number / num<br/>
      64: float64 / f64 / double / real</p>
-  <h4>Chars</h4>
-  <p>8: char8 / uchar8<br/>
-     16: char16 / uchar16<br/>
-     32: char / char32 / uchar / uchar32<br/>
-     64: char64 / uchar64</p>
   <h4>Strings</h4>
   <p>string / str / text</p>
   <h3>2.2 Composite</h3>
@@ -217,22 +215,35 @@
 
 <section id="memory-management">
   <h2>10. Memory Management</h2>
-  <p><code>free(a, b, c)</code> builds <code>AST::Free(Vec&lt;Identifier&gt;)</code>; runtime decides disposal semantics.</p>
+  <p>Once a scope is exited the scope and its contents are removed and freed from memory. The <code>free()</code> function removes the inputed variable from the scope and frees the memory.</p>
 </section>
 
 <section id="runtime">
   <h2>11. Runtime / Execution Model</h2>
-  <ul>
-    <li>Tree‑walk interpreter</li>
-    <li>Optimizer stage</li>
-    <li>Serialization: <code>.ast</code></li>
-    <li>Native extension (experimental): dynamic function registration via DLL / <code>.llb</code></li>
-  </ul>
+  <p>LIA-lang is an interpreted programing language meaning execution is handeled by a program that reads in the code and executes it based on its operation.</p>
+  <p>LIA uses a Tree‑walk interpreter that executes assembled LIA code. LIA code is assembled into an abstract stynax tree and/or serialised into <code>.ast</code> file before execution or being bundeled with an interpreter.</p>
+  <p>Runtime interpreters are eather embeded into a compiled binary with assembled LIA bytecode or are seperate and read in <code>.ast</code> or <code>.lia</code> files for execution. In the case of a seperate interpreter <code>.lia</code> files are parsed into unserialised <code>.ast</code> LIA bytecode before being executed. A seperate interpreter will deserialise <code>.ast</code> files before executing theem.</p>
+  <p>An embeded interpreter will deserialise the LIA bytecode appended to the end of its file after the <code>"LIA\xFF</code> header before executing it.</p>
 </section>
 
 <section id="error-handling">
   <h2>12. Error Handling</h2>
-  <p>Current: panic on parse errors (immediate abort).</p>
+  <p>Categories:</p>
+  <table>
+    <thead><tr><th>Category</th><th>Examples</th><th>Handling (Typical)</th></tr></thead>
+    <tbody>
+      <tr><td>Lexical</td><td>Invalid token</td><td>Abort parse; diagnostic emitted</td></tr>
+      <tr><td>Syntax</td><td>Unexpected token / structure</td><td>Abort parse with location</td></tr>
+      <tr><td>Type</td><td>Incompatible assignment</td><td>Diagnostic; may abort validation</td></tr>
+      <tr><td>Runtime (non‑fatal)</td><td>Missing library function</td><td>Report; attempt continue</td></tr>
+      <tr><td>Runtime (fatal)</td><td>Null dereference (if implemented), internal panic</td><td>Terminate with error code</td></tr>
+    </tbody>
+  </table>
+  <p>Standard diagnostic format (illustrative):</p>
+  <pre><code>&lt;KIND&gt;: &lt;MESSAGE&gt;
+at &lt;FILEPATH&gt;:&lt;LINE&gt;
+&lt;OPTIONAL EXTRA CONTEXT&gt;</code></pre>
+  <p>Fatal runtime errors terminate the process with an implementation‑defined exit code. Non‑fatal runtime issues may be logged to stderr or console depending on runtime flags.</p>
 </section>
 
 <section id="grammar">
@@ -291,12 +302,15 @@ size             ::= integer_literal</code></pre>
 
 <section id="native-interop">
   <h2>15. Native Interop</h2>
-  <p>Dynamic library import (if enabled) expects at minimum: <code>extern "C" fn register_functions()</code>. Callback variant <code>register_functions_with_callback</code> may also be recognized.</p>
+  <h4>.dll files</h4>
+  <p>.dll files can be loaded via <code>import</code> or the <code>loadLibrary()</code> native function. Public functions will be converted to work with LIA-lang and placed in the global scope.</p>
+  <h4>.llb files</h4>
+  <p>.llb files can be loaded via <code>import</code> or the <code>loadLibrary()</code> native function and are essentially libraries specifically made for LIA-lang. They are technically just <code>.dll</code> files with special functionality to interface with LIA-lang.</p>
 </section>
 
 <section id="compliance-notes">
   <h2>16. Compliance Notes</h2>
-  <p>Where implementation and this document differ (e.g. disabled member access), source code is authoritative until harmonised.</p>
+  <p>Where implementation and this document differ (e.g. disabled member access), the source code is authoritative until harmonised.</p>
 </section>
 
 <hr/>
