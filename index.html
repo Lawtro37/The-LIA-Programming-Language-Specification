@@ -16,6 +16,7 @@
  h1 { font-size:2rem; margin:.2em 0 .4em; }
  h2 { border-bottom:1px solid var(--rule); padding-bottom:4px; margin-top:2.2em; }
  h3 { margin-top:1.8em; }
+ h4 { margin-top:1.4em; }
  p { margin:0 0 1em; }
  a { color:var(--accent); text-decoration:none; }
  a:hover { text-decoration:underline; }
@@ -48,207 +49,367 @@
 </style>
 </head>
 <body>
-<header class="masthead">
-  <img src="logo.png" alt="LIA Logo" />
+
+<div class="masthead">
+  <img src="logo.png" width="200" alt="LIA Logo">
   <div>
-    <h1>LIA Programming Language v1.0.0 Specification <span style="font-size:60%; font-weight:400;">(Draft)</span></h1>
-    <!-- Updated meta -->
-    <div class="meta">Revision: 2<br/>Release Date: 14/8/2025<br/>Author: Lawton "Lawtro" Kelly</div>
-    <div class="status">Status: Draft – Incomplete (additional sections planned)</div>
+    <h1>The LIA Programming Language v1.0.0 Specification [DRAFT]</h1>
+    <div class="meta">
+      Revision: 3<br>
+      Release Date: 18/8/2025<br>
+      Author: Lawton "Lawtro" Kelly
+    </div>
   </div>
-</header>
-<hr/>
-<p class="lead">This document describes the core language specifications and not particularly the current state of LIA-lang. This is simply the target of what LIA-lang should be.</p>
-<div class="note"><strong>THIS DOCUMENT IS INCOMPLETE:</strong> more content is planned to be added to this document.</div>
-<br>
-<nav class="toc" aria-label="Table of Contents">
-  <strong>Contents</strong>
-  <ul>
-    <li><a href="#introduction">Introduction</a></li>
-    <li><a href="#lexical-structure">1. Lexical Structure</a></li>
-    <li><a href="#types">2. Types</a></li>
-    <li><a href="#variables">3. Variables</a></li>
-    <li><a href="#statements">4. Statements</a></li>
-    <li><a href="#functions">5. Functions</a></li>
-    <li><a href="#objects">6. Objects</a></li>
-    <li><a href="#arrays">7. Arrays</a></li>
-    <li><a href="#casting">8. Casting</a></li>
-    <li><a href="#import-system">9. Import System</a></li>
-    <li><a href="#memory-management">10. Memory Management</a></li>
-    <li><a href="#runtime">11. Runtime / Execution Model</a></li>
-    <li><a href="#error-handling">12. Error Handling</a></li>
-    <li><a href="#grammar">13. Grammar</a></li>
-    <li><a href="#precedence">14. Operator Precedence</a></li>
-    <li><a href="#native-interop">15. Native Interop</a></li>
-    <li><a href="#compliance-notes">16. Compliance Notes</a></li>
-  </ul>
-</nav>
+</div>
 
-<section id="introduction">
-  <h2>Introduction</h2>
-  <p>This specification defines the normative syntax, semantics, and external interface of the LIA programming language. Its goal is to provide a precise, implementation‑agnostic contract for:</p>
-  <ul>
-    <li>Lexical elements (tokens, literals, keywords)</li>
-    <li>Grammar and syntactic forms</li>
-    <li>Type system and coercion model</li>
-    <li>Runtime constructs (functions, objects, arrays)</li>
-    <li>Memory and lifetime directives (<code>free</code>)</li>
-    <li>Module and external library importing</li>
-    <li>Native interoperability surface</li>
-  </ul>
-  <p><strong>Scope:</strong> Only the core language and its required runtime behaviors.<br/>
-     <strong>Non‑scope:</strong> Tooling, build systems, optimization strategies, debugging facilities, editor integration, and prospective future extensions.</p>
-  <p><strong>Conformance:</strong> An implementation is conforming if it:<br/>
-  1. Accepts all grammatically valid programs defined herein.<br/>
-  2. Rejects (with a diagnostic) any lexically or syntactically invalid input.<br/>
-  3. Preserves the specified evaluation order and side‑effects.<br/>
-  4. Implements the defined type and value categories (including <code>null</code> and <code>void</code> semantics).</p>
-  <p><strong>Undefined Behavior:</strong> Any construct not explicitly covered (e.g. accessing non‑existent object fields) is undefined and may terminate execution or produce implementation‑specific results.</p>
-  <p><strong>Versioning:</strong> This draft targets v1.0.0. Backward incompatible changes after ratification require a major version increment.</p>
-  <p><strong>Terminology:</strong><br/>
-  • “Must” / “Shall”: mandatory.<br/>
-  • “Should”: recommended.<br/>
-  • “May”: optional.<br/>
-  • “Undefined”: intentionally unspecified—implementations are not required to diagnose.<br/>
-  • “LIA-lang”: the LIA Programming Language.</p>
-  <p>All examples are illustrative; if an example conflicts with a formal rule, the rule governs.</p>
-</section>
+<hr>
 
-<section id="lexical-structure">
-  <h2>1. Lexical Structure</h2>
-  <p><strong>Character set:</strong> ASCII (string contents = raw bytes).<br/>
-     <strong>Whitespace:</strong> space, tab, CR, LF (insignificant outside strings).<br/>
-     <strong>Comments:</strong> <code>//</code> to end of line.</p>
-  <h3>1.1 Identifiers</h3>
-  <p>Pattern: <code>[A-Za-z_][A-Za-z0-9_]*</code>; case‑sensitive; keywords excluded.</p>
-  <h3>1.2 Keywords</h3>
-  <p class="keyword-list">
-    <code>function</code><code>class</code><code>var</code><code>const</code><code>return</code><code>if</code><code>else</code><code>while</code><code>free</code><code>import</code><code>true</code><code>false</code><code>null</code><code>void</code><code>bool</code><code>int</code><code>float</code><code>string</code>
-  </p>
-  <h4>Aliases</h4>
-  <p><strong>function:</strong> fn, fun, func, def<br/>
-     <strong>var:</strong> let, local<br/>
-     <strong>const:</strong> final (literal word <code>const</code>)<br/>
-     <strong>free:</strong> delete, pop<br/>
-     <strong>null:</strong> nul<br/>
-     <strong>bool:</strong> boolean</p>
-  <h3>1.3 Literals</h3>
-  <ul>
-    <li><strong>Integer:</strong> decimal digits; default signed 32‑bit.</li>
-    <li><strong>Float:</strong> digits with decimal point.</li>
-    <li><strong>String:</strong> <code>"..."</code> (no escapes).</li>
-    <li><strong>Boolean:</strong> <code>true</code> / <code>false</code>.</li>
-    <li><strong>Null:</strong> <code>null</code>.</li>
-    <li><strong>Object:</strong> <code>{ ... }</code>.</li>
-    <li><strong>Array:</strong> <code>[type? element (, element)*]</code> (optional leading inline type).</li>
-  </ul>
-  <h3>1.4 Operators</h3>
-  <p>Arithmetic: <code>+ - * /</code><br/>
-     Comparison: <code>==</code><br/>
-     Assignment: <code>=</code><br/>
-     Unary: prefix <code>+ -</code><br/>
-     Index: <code>ident[expression]</code><br/>
-     Member access placeholder (not active in current syntax).</p>
-  <h3>1.5 Delimiters</h3>
-  <p><code>() [] { } , :</code></p>
-</section>
+<p>This document describes the core language specifications and not particularly the current state of LIA-lang. This is simply the target of what LIA-lang should be.</p>
 
-<section id="types">
-  <h2>2. Types</h2>
-  <p>Primitive core: <code>int&lt;S&gt;</code>, <code>uint&lt;S&gt;</code>, <code>float&lt;S&gt;</code>, <code>string</code>, <code>bool</code>, <code>void</code>, <code>null</code>, <code>any</code>. Default size <code>S</code>=32 bits where applicable.</p>
-  <h3>2.1 Sub-type Aliases</h3>
-  <p>Default integer width: 32 bits (alias <code>int</code> = <code>int32</code>).</p>
-  <h4>Integers</h4>
-  <p>8: int8 / i8 / byte &nbsp; | &nbsp; uint8 / u8 / ubyte<br/>
-     16: int16 / i16 / short &nbsp; | &nbsp; uint16 / u16 / ushort<br/>
-     32: int32 / i32 (alias int) &nbsp; | &nbsp; uint32 / u32<br/>
-     64: int64 / i64 &nbsp; | &nbsp; uint64 / u64</p>
-  <h4>Floats</h4>
-  <p>32: float / float32 / f32 / number / num<br/>
-     64: float64 / f64 / double / real</p>
-  <h4>Strings</h4>
-  <p>string / str / text</p>
-  <h3>2.2 Composite</h3>
-  <p>Arrays (dynamic); Objects (anonymous record); Functions (first‑class identifiers, no closures).</p>
-</section>
+<div class="note">
+<strong>THIS DOCUMENT IS INCOMPLETE:</strong> more content is planned to be added to this document.
+</div>
 
-<section id="variables">
-  <h2>3. Variables</h2>
-  <p>Syntax: <code>var &lt;type&gt; &lt;name&gt; (= expression)?</code><br/>
-     <code>var &lt;type&gt; &lt;name&gt;[index]?</code> (array element assignment after declaration uses assignment).</p>
-  <p><code>const</code> parsed; immutability enforcement nominal. Uninitialized variables = <code>null</code>.</p>
-</section>
+<div class="toc">
+<h3>Table of Contents</h3>
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#lexical">1. Lexical Structure</a></li>
+<li><a href="#types">2. Types</a></li>
+<li><a href="#variables">3. Variables</a></li>
+<li><a href="#statements">4. Statements</a></li>
+<li><a href="#functions">5. Functions</a></li>
+<li><a href="#objects">6. Objects</a></li>
+<li><a href="#arrays">7. Arrays</a></li>
+<li><a href="#casting">8. Casting</a></li>
+<li><a href="#import">9. Import System</a></li>
+<li><a href="#memory">10. Memory Management</a></li>
+<li><a href="#runtime">11. Runtime / Execution Model</a></li>
+<li><a href="#errors">12. Error Handling</a></li>
+<li><a href="#grammar">13. Grammar</a></li>
+<li><a href="#precedence">14. Operator Precedence</a></li>
+<li><a href="#interop">15. Native Interop</a></li>
+<li><a href="#compliance">16. Compliance Notes</a></li>
+<li><a href="#natives">17. Native Functions</a></li>
+</ul>
+</div>
 
-<section id="statements">
-  <h2>4. Statements</h2>
-  <p>Variable declaration; expression statement; if/else; while; return; free; import.</p>
-  <p>Blocks: <code>{ statement* }</code> produce internal Program node.</p>
-</section>
+<h2 id="introduction"><a class="section-anchor" href="#introduction">Introduction</a></h2>
 
-<section id="functions">
-  <h2>5. Functions</h2>
-  <p>Syntax: <code>function &lt;return_type&gt; &lt;identifier&gt;(&lt;param_list?&gt;) { block }</code></p>
-  <p>Parameters: <code>&lt;type&gt; &lt;identifier&gt;</code> comma‑separated. Return: <code>return &lt;expression&gt;</code>; void functions may return without expression (produces <code>null</code>). No overloading or defaults.</p>
-</section>
+<p>This specification defines the normative syntax, semantics, and external interface of the LIA programming language. Its goal is to provide a precise, implementation‑agnostic contract for:</p>
 
-<section id="objects">
-  <h2>6. Objects</h2>
-  <p>Literal: <code>{ &lt;type&gt; &lt;fieldName&gt;: &lt;expression&gt;, ... }</code>; constructs <code>AST::Object(Vec&lt;(Type,String,AST)&gt;)</code>.</p>
-</section>
+<ul>
+<li>Lexical elements (tokens, literals, keywords)</li>
+<li>Grammar and syntactic forms</li>
+<li>Type system and coercion model</li>
+<li>Runtime constructs (functions, objects, arrays)</li>
+<li>Memory and lifetime directives (<code>free</code>)</li>
+<li>Module and external library importing</li>
+<li>Native interoperability surface</li>
+</ul>
 
-<section id="arrays">
-  <h2>7. Arrays</h2>
-  <p>Indexed: <code>arr[i]</code>; Literals: <code>[ &lt;optionalType&gt; elem1, elem2, ... ]</code>.</p>
-  <p>Stored as <code>AST::Array(Type, Vec&lt;AST&gt;)</code>; element type explicit or inferred <code>Any</code>.</p>
-</section>
+<p><strong>Scope:</strong> Only the core language and its required runtime behaviors.<br>
+<strong>Non‑scope:</strong> Tooling, build systems, optimization strategies, debugging facilities, editor integration, and prospective future extensions.</p>
 
-<section id="casting">
-  <h2>8. Casting</h2>
-  <p>Call‑style cast: <code>int32(expr)</code> parsed as <code>AST::Call("int32", [expr])</code>.</p>
-</section>
+<p><strong>Conformance:</strong> An implementation is conforming if it:</p>
+<ol class="compact">
+<li>Accepts all grammatically valid programs defined herein.</li>
+<li>Rejects (with a diagnostic) any lexically or syntactically invalid input.</li>
+<li>Preserves the specified evaluation order and side‑effects.</li>
+<li>Implements the defined type and value categories (including <code>null</code> and <code>void</code> semantics).</li>
+</ol>
 
-<section id="import-system">
-  <h2>9. Import System</h2>
-  <p><code>import "relative/or/absolute/path.lia"</code>: loads, tokenizes, inlines AST (recursive). Optional experimental dynamic library: <code>import "library.llb"</code>.</p>
-  <p>Search path relative to current working directory. No cycle detection.</p>
-</section>
+<p><strong>Undefined Behavior:</strong> Any construct not explicitly covered (e.g. accessing non‑existent object fields) is undefined and may terminate execution or produce implementation‑specific results.</p>
 
-<section id="memory-management">
-  <h2>10. Memory Management</h2>
-  <p>Once a scope is exited the scope and its contents are removed and freed from memory. The <code>free()</code> function removes the inputed variable from the scope and frees the memory.</p>
-</section>
+<p><strong>Versioning:</strong> This draft targets v1.0.0. Backward incompatible changes after ratification require a major version increment.</p>
 
-<section id="runtime">
-  <h2>11. Runtime / Execution Model</h2>
-  <p>LIA-lang is an interpreted programing language meaning execution is handeled by a program that reads in the code and executes it based on its operation.</p>
-  <p>LIA uses a Tree‑walk interpreter that executes assembled LIA code. LIA code is assembled into an abstract stynax tree and/or serialised into <code>.ast</code> file before execution or being bundeled with an interpreter.</p>
-  <p>Runtime interpreters are eather embeded into a compiled binary with assembled LIA bytecode or are seperate and read in <code>.ast</code> or <code>.lia</code> files for execution. In the case of a seperate interpreter <code>.lia</code> files are parsed into unserialised <code>.ast</code> LIA bytecode before being executed. A seperate interpreter will deserialise <code>.ast</code> files before executing theem.</p>
-  <p>An embeded interpreter will deserialise the LIA bytecode appended to the end of its file after the <code>"LIA\xFF</code> header before executing it.</p>
-</section>
+<dl class="terms">
+<dt>"Must" / "Shall"</dt><dd>mandatory.</dd>
+<dt>"Should"</dt><dd>recommended.</dd>
+<dt>"May"</dt><dd>optional.</dd>
+<dt>"Undefined"</dt><dd>intentionally unspecified—implementations are not required to diagnose.</dd>
+<dt>"LIA-lang"</dt><dd>the LIA Programming language</dd>
+</dl>
 
-<section id="error-handling">
-  <h2>12. Error Handling</h2>
-  <p>Categories:</p>
-  <table>
-    <thead><tr><th>Category</th><th>Examples</th><th>Handling (Typical)</th></tr></thead>
-    <tbody>
-      <tr><td>Lexical</td><td>Invalid token</td><td>Abort parse; diagnostic emitted</td></tr>
-      <tr><td>Syntax</td><td>Unexpected token / structure</td><td>Abort parse with location</td></tr>
-      <tr><td>Type</td><td>Incompatible assignment</td><td>Diagnostic; may abort validation</td></tr>
-      <tr><td>Runtime (non‑fatal)</td><td>Missing library function</td><td>Report; attempt continue</td></tr>
-      <tr><td>Runtime (fatal)</td><td>Null dereference (if implemented), internal panic</td><td>Terminate with error code</td></tr>
-    </tbody>
-  </table>
-  <p>Standard diagnostic format (illustrative):</p>
-  <pre><code>&lt;KIND&gt;: &lt;MESSAGE&gt;
+<p class="small">All examples are illustrative; if an example conflicts with a formal rule, the rule governs.</p>
+
+<h2 id="lexical"><a class="section-anchor" href="#lexical">1. Lexical Structure</a></h2>
+
+<p><strong>Character set:</strong> ASCII (string contents treated as raw bytes)<br>
+<strong>Whitespace:</strong> space, tab, CR, LF (insignificant outside string literals)<br>
+<strong>Comments:</strong></p>
+<ul>
+<li><code>//</code> to end of line</li>
+<li><code>/*</code> to next <code>*/</code> comment closure</li>
+</ul>
+
+<h3 id="identifiers">1.1 Identifiers</h3>
+<p><strong>Pattern:</strong> <code>[A-Za-z_][A-Za-z0-9_]*</code><br>
+Case-sensitive. Reserved keywords excluded.</p>
+
+<h3 id="keywords">1.2 Keywords</h3>
+<div class="keyword-list">
+<code>function</code>, <code>class</code>, <code>new</code>, <code>var</code>, <code>const</code>, <code>return</code>, <code>if</code>, <code>else</code>, <code>for</code>, <code>loop</code>, <code>while</code>, <code>break</code>, <code>skip</code>, <code>free</code>, <code>import</code>, <code>true</code>, <code>false</code>, <code>null</code>, <code>void</code>, <code>bool</code>, <code>int</code>, <code>float</code>, <code>string</code>
+</div>
+
+<p class="small">Note that keywords and their aliases aren't particularly reserved when defining variables</p>
+
+<h4>Aliases</h4>
+<ul>
+<li><code>function</code>: <code>fn</code>, <code>fun</code>, <code>func</code>, <code>def</code></li>
+<li><code>var</code>: <code>let</code>, <code>local</code></li>
+<li><code>const</code>: <code>final</code></li>
+<li><code>break</code>: <code>stop</code></li>
+<li><code>skip</code>: <code>continue</code>, <code>next</code></li>
+<li><code>free</code>: <code>delete</code>, <code>pop</code></li>
+<li><code>null</code>: <code>nul</code></li>
+<li><code>bool</code>: <code>boolean</code></li>
+</ul>
+
+<h3 id="literals">1.3 Literals</h3>
+<ul>
+<li><strong>Integer:</strong> decimal digits (<code>123</code>).</li>
+<li><strong>Float:</strong> digits with a decimal point (<code>1.0</code>, <code>0.5</code>).</li>
+<li><strong>String:</strong> <code>"</code> until next <code>"</code> (new lines do not close strings).</li>
+<li><strong>Boolean:</strong> <code>true</code> / <code>false</code>.</li>
+<li><strong>Null:</strong> <code>null</code>.</li>
+<li><strong>Object literal:</strong> <code>{ &lt;type&gt;? &lt;identifier&gt;: &lt;value&gt; (, &lt;type&gt;? &lt;identifier&gt;: &lt;value&gt;)*, }</code>.</li>
+<li><strong>Array literal:</strong> <code>&lt;type&gt;? [element (, element)*]</code> (optional leading inline type token).</li>
+</ul>
+
+<h3 id="operators">1.4 Operators</h3>
+<ul>
+<li><strong>Arithmetic:</strong> <code>+ - * /</code></li>
+<li><strong>Comparison:</strong> <code>==</code></li>
+<li><strong>Assignment:</strong> <code>=</code></li>
+<li><strong>Unary:</strong> prefix <code>+ -</code></li>
+<li><strong>Index:</strong> <code>ident[expression]</code></li>
+<li><strong>Member access:</strong> grammar placeholder exists but is not part of the active syntax; accessing object fields directly is not defined outside literal construction.</li>
+</ul>
+
+<h3 id="delimiters">1.5 Delimiters</h3>
+<code>() [] { } , :</code>
+
+<h2 id="types"><a class="section-anchor" href="#types">2. Types</a></h2>
+
+<p><strong>Primitive core:</strong></p>
+<ul>
+<li><code>int&lt;S&gt;</code> / <code>uint&lt;S&gt;</code> (signed / unsigned integers by size)</li>
+<li><code>float&lt;S&gt;</code></li>
+<li><code>string</code></li>
+<li><code>bool</code></li>
+<li><code>void</code> (function return type only)</li>
+<li><code>null</code></li>
+<li><code>any</code> (internal fallback / inference default)</li>
+</ul>
+
+<p><code>S</code> = storage size in bytes; default size when omitted is 32 bits.</p>
+
+<h4>Sub‑type Aliases</h4>
+<p>Default integer width: 32 bits (alias <code>int</code> = <code>int32</code>).</p>
+
+<p><strong>Integers (signed / unsigned):</strong></p>
+<ul>
+<li>8: <code>int8</code>, <code>i8</code>, <code>byte</code> / <code>uint8</code>, <code>u8</code>, <code>ubyte</code></li>
+<li>16: <code>int16</code>, <code>i16</code>, <code>short</code> / <code>uint16</code>, <code>u16</code>, <code>ushort</code></li>
+<li>32: <code>int32</code>, <code>i32</code> / <code>uint32</code>, <code>u32</code> (alias <code>int</code> = <code>int32</code>)</li>
+<li>64: <code>int64</code>, <code>i64</code> / <code>uint64</code>, <code>u64</code></li>
+</ul>
+
+<p><strong>Floats:</strong></p>
+<ul>
+<li>32: <code>float</code>, <code>float32</code>, <code>f32</code>, <code>number</code>, <code>num</code></li>
+<li>64: <code>float64</code>, <code>f64</code>, <code>double</code>, <code>real</code></li>
+</ul>
+
+<p><strong>Strings:</strong> <code>string</code>, <code>str</code>, <code>text</code></p>
+
+<p><strong>Composite:</strong></p>
+<ul>
+<li>Arrays: dynamic length; literal syntax <code>[...]</code>.</li>
+<li>Objects: anonymous record literal <code>{ type name: value, ... }</code>.</li>
+<li>Functions: first‑class by identifier (no closures).</li>
+</ul>
+
+<h2 id="variables"><a class="section-anchor" href="#variables">3. Variables</a></h2>
+
+<p><strong>Syntax:</strong></p>
+<ul>
+<li><code>var &lt;type&gt;? &lt;name&gt; (= expression)?</code></li>
+<li><code>var &lt;type&gt;? &lt;name&gt;[index]?</code> (array element assignment after declaration uses assignment)</li>
+<li><code>const &lt;type&gt;? &lt;name&gt; (= expression)?</code> (var can be inferred)</li>
+<li><code>global var &lt;type&gt;? &lt;name&gt; (= expression)?</code></li>
+</ul>
+
+<p><code>const</code> modifier is parsed; enforcement of immutability is nominal.</p>
+
+<p>Variables with no declared type default to <code>any</code><br>
+Uninitialized variables get <code>null</code>.</p>
+
+<h2 id="statements"><a class="section-anchor" href="#statements">4. Statements</a></h2>
+
+<ul>
+<li>Expression statement</li>
+<li><code>if (expr) { block } (else { block })?</code></li>
+<li><code>while (expr) { block }</code></li>
+<li><code>loop (num) { block }</code></li>
+<li><code>for (init; condition; increment) { block }</code></li>
+<li><code>return expression</code></li>
+<li><code>free(identifier (, identifier)*)</code></li>
+<li><code>import "path.lia" | "lib.llb"</code></li>
+<li><code>break</code> (breaks out of loops)</li>
+<li><code>skip</code> (skips current loop)</li>
+</ul>
+
+<h2 id="functions"><a class="section-anchor" href="#functions">5. Functions</a></h2>
+
+<p><strong>Syntax:</strong><br>
+<code>function &lt;return_type&gt; &lt;identifier&gt;( &lt;param_list&gt;? ) { block }</code></p>
+
+<p><strong>Parameters:</strong><br>
+<code>&lt;type&gt; &lt;identifier&gt;</code> separated by commas.</p>
+
+<p><strong>Return:</strong><br>
+<code>return &lt;expression&gt;</code> (void functions may return without an expression producing <code>null</code>).</p>
+
+<p>No overloading or default parameters.</p>
+
+<h2 id="objects"><a class="section-anchor" href="#objects">6. Objects</a></h2>
+
+<p><strong>Literal:</strong><br>
+<code>{ &lt;type&gt; &lt;fieldName&gt;: &lt;expression&gt;, ... }</code></p>
+
+<p>Element type is either explicitly defined or inferred as <code>Any</code>.</p>
+
+<h2 id="arrays"><a class="section-anchor" href="#arrays">7. Arrays</a></h2>
+
+<p>Two forms:</p>
+<ul>
+<li>Indexed identifiers: <code>arr[i]</code></li>
+<li>Literals: <code>&lt;optionalLeadingType&gt; [ elem1, elem2, ... ]</code></li>
+</ul>
+
+<p>Element type is either explicitly defined or inferred as <code>Any</code>.</p>
+
+<h2 id="casting"><a class="section-anchor" href="#casting">8. Casting</a></h2>
+
+<p>Prefix type token followed by a parenthesized expression: <code>&lt;type&gt; (expr)</code></p>
+
+<h2 id="import"><a class="section-anchor" href="#import">9. Import System</a></h2>
+
+<p><code>import "&lt;.lia/.llb/.dll path&gt;" (as &lt;identifier&gt;)?</code></p>
+
+<ul>
+<li><code>import "relative/or/absolute/path.lia"</code><br>
+Loads and tokenizes file; AST is inlined (recursive parse).</li>
+
+<li><code>import "library.llb"</code><br>
+loads a LIA-lang library.</li>
+
+<li><code>import "library.dll"</code><br>
+loads a dynamic link library</li>
+
+<li><code>import "library.lia" as lib</code><br>
+import content is placed in an object instead of global scope</li>
+</ul>
+
+<p>Search path: relative to current working directory. No cycle detection.</p>
+
+<h2 id="memory"><a class="section-anchor" href="#memory">10. Memory Management</a></h2>
+
+<p>Once a scope is exited the scope and its contents are removed and freed from memory.<br>
+The <code>free()</code> function removes the inputted variable from the scope and frees the memory.</p>
+
+<h3 id="memory-model">10.1 Memory Allocation Model</h3>
+
+<h4>Stack Allocation</h4>
+<ul>
+<li>Primitive types (int, float, bool)</li>
+<li>Function parameters and local variables</li>
+<li>Automatically freed on scope exit</li>
+</ul>
+
+<h4>Heap Allocation</h4>
+<ul>
+<li>Dynamic arrays and strings</li>
+<li>Objects and complex data structures</li>
+<li>Subject to implementation-defined size limits</li>
+</ul>
+
+<h4>Allocation Behavior</h4>
+<table>
+<thead>
+<tr><th>Data Type</th><th>Allocation Location</th></tr>
+</thead>
+<tbody>
+<tr><td><code>int</code></td><td>stack</td></tr>
+<tr><td><code>float</code></td><td>stack</td></tr>
+<tr><td><code>bool</code></td><td>stack</td></tr>
+<tr><td><code>null</code></td><td>stack</td></tr>
+<tr><td><code>void</code></td><td>stack</td></tr>
+<tr><td><code>string</code> (< 32 bytes)</td><td>stack</td></tr>
+<tr><td><code>string</code> (> 32 bytes)</td><td>heap</td></tr>
+<tr><td>Arrays</td><td>heap</td></tr>
+<tr><td>Objects</td><td>heap</td></tr>
+<tr><td>Classes</td><td>heap</td></tr>
+</tbody>
+</table>
+
+<h2 id="runtime"><a class="section-anchor" href="#runtime">11. Runtime / Execution Model</a></h2>
+
+<p>LIA-lang is an interpreted programming language meaning execution is handled by a program that reads in the code and executes it based on its operation.
+LIA uses a Tree‑walk interpreter that executes assembled LIA code.
+LIA code is assembled into an abstract syntax tree and/or serialised into <code>.ast</code> file before execution or being bundled with an interpreter.
+Runtime interpreters are either embedded into a compiled binary with assembled LIA bytecode or are separate and read in <code>.ast</code> or <code>.lia</code> files for execution.
+In the case of a separate interpreter <code>.lia</code> files are parsed into unserialised <code>.ast</code> LIA bytecode before being executed
+A separate interpreter will deserialise <code>.ast</code> files before executing them.
+An embedded interpreter will deserialise the LIA bytecode appended to the end of its file after the <code>"LIA\xFF"</code> header before executing it.</p>
+
+<table>
+<thead>
+<tr><th>Diagram of Direct Interpretation</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Tokeniser → Parser/Assembler → Interpreter</code></td></tr>
+</tbody>
+</table>
+
+<table>
+<thead>
+<tr><th>Diagram of Compilation</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Tokeniser → Parser/Assembler → Serialiser → Embedder/Compiler</code></td></tr>
+</tbody>
+</table>
+
+<h2 id="errors"><a class="section-anchor" href="#errors">12. Error Handling</a></h2>
+
+<p><strong>Categories:</strong></p>
+
+<table>
+<thead>
+<tr><th>Category</th><th>Examples</th><th>Handling (Typical)</th></tr>
+</thead>
+<tbody>
+<tr><td>Lexical</td><td>Invalid token</td><td>Abort parse; diagnostic emitted</td></tr>
+<tr><td>Syntax</td><td>Unexpected token / structure</td><td>Abort parse with location</td></tr>
+<tr><td>Type</td><td>Incompatible assignment</td><td>Diagnostic; may abort validation</td></tr>
+<tr><td>Runtime (non‑fatal)</td><td>Missing library function</td><td>Report; attempt continue</td></tr>
+<tr><td>Runtime (fatal)</td><td>Calling an undefined function</td><td>Terminate with error code</td></tr>
+</tbody>
+</table>
+
+<p>Standard diagnostic format (illustrative):</p>
+<pre><code>&lt;KIND&gt;: &lt;MESSAGE&gt;
 at &lt;FILEPATH&gt;:&lt;LINE&gt;
 &lt;OPTIONAL EXTRA CONTEXT&gt;</code></pre>
-  <p>Fatal runtime errors terminate the process with an implementation‑defined exit code. Non‑fatal runtime issues may be logged to stderr or console depending on runtime flags.</p>
-</section>
 
-<section id="grammar">
-  <h2>13. Grammar (EBNF Approximation)</h2>
-  <pre><code>program          ::= statement*
+<p>Fatal runtime errors terminate the process with an implementation‑defined exit code. Non‑fatal runtime issues may be logged to stderr or console depending on runtime flags.</p>
+
+<h2 id="grammar"><a class="section-anchor" href="#grammar">13. Grammar (EBNF Approximation)</a></h2>
+
+<pre><code>program          ::= statement*
 statement        ::= function_decl
                    | var_decl
                    | if_stmt
@@ -269,7 +430,7 @@ import_stmt      ::= "import" string_literal
 block            ::= "{" statement* "}"
 expression       ::= assignment
 assignment       ::= binary ("=" assignment)?
-binary           ::= unary (op unary)*        # op precedence (* /, + -, ==)
+binary           ::= unary (op unary)*        # op in precedence order (* /, + -, ==)
 unary            ::= ("+" | "-" | cast_prefix) unary | primary
 cast_prefix      ::= type "("
 primary          ::= number
@@ -287,33 +448,66 @@ object_field     ::= type identifier ":" expression
 ident_or_index   ::= identifier ("[" expression "]")?
 type             ::= "int" size? | "uint" size? | "float" size? | "char" size? | "string" | "bool" | "void" | "any"
 size             ::= integer_literal</code></pre>
-</section>
 
-<section id="precedence">
-  <h2>14. Operator Precedence (High → Low)</h2>
-  <ol>
-    <li>Unary (<code>+ - (cast)</code>)</li>
-    <li>Multiplicative (<code>* /</code>)</li>
-    <li>Additive (<code>+ -</code>)</li>
-    <li>Equality (<code>==</code>)</li>
-    <li>Assignment (<code>=</code>, right‑associative)</li>
-  </ol>
-</section>
+<h2 id="precedence"><a class="section-anchor" href="#precedence">14. Operator Precedence (High → Low)</a></h2>
 
-<section id="native-interop">
-  <h2>15. Native Interop</h2>
-  <h4>.dll files</h4>
-  <p>.dll files can be loaded via <code>import</code> or the <code>loadLibrary()</code> native function. Public functions will be converted to work with LIA-lang and placed in the global scope.</p>
-  <h4>.llb files</h4>
-  <p>.llb files can be loaded via <code>import</code> or the <code>loadLibrary()</code> native function and are essentially libraries specifically made for LIA-lang. They are technically just <code>.dll</code> files with special functionality to interface with LIA-lang.</p>
-</section>
+<ol>
+<li>Unary (<code>++ --</code>)</li>
+<li>Multiplicative (<code>* /</code>)</li>
+<li>Additive (<code>+ -</code>)</li>
+<li>Equality (<code>==</code>)</li>
+<li>Assignment (<code>=</code> right-associative)</li>
+</ol>
 
-<section id="compliance-notes">
-  <h2>16. Compliance Notes</h2>
-  <p>Where implementation and this document differ (e.g. disabled member access), the source code is authoritative until harmonised.</p>
-</section>
+<h2 id="interop"><a class="section-anchor" href="#interop">15. Native Interop</a></h2>
 
-<hr/>
-<footer class="small">Status: Draft baseline for v1.0.0 core.</footer>
-</body>
-</html>
+<h4>.dll files:</h4>
+<p>.dll files can be loaded via <code>import</code> or the <code>loadLibrary()</code> native function<br>
+.dll public functions will be converted to work with LIA-lang placed in the global scope</p>
+
+<h4>.llb files:</h4>
+<p>.llb files can be loaded via <code>import</code> or the <code>loadLibrary()</code> native function and are essentially libraries specifically made for LIA-lang.<br>
+.llb files are technically just .dll files under the hood just with special functionality to interface with LIA-lang</p>
+
+<h2 id="compliance"><a class="section-anchor" href="#compliance">16. Compliance Notes</a></h2>
+
+<p>Where implementation and this document differ (e.g. disabled member access), the source code is authoritative until harmonised.</p>
+
+<h2 id="natives"><a class="section-anchor" href="#natives">17. Native Functions (Built‑ins)</a></h2>
+
+<p>The following native (built‑in) global functions are provided by the reference interpreter. Availability or exact behavior may vary in other runtimes.</p>
+
+<table>
+<thead>
+<tr><th>Function</th><th>Args</th><th>Returns</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>println</code></td><td><code>any*</code></td><td><code>void</code></td><td>Prints each argument on its own line (stringifies values).</td></tr>
+<tr><td><code>print</code></td><td><code>any*</code></td><td><code>void</code></td><td>Prints arguments without automatic newline separation.</td></tr>
+<tr><td><code>len</code></td><td><code>value</code></td><td><code>int</code></td><td>Length of string / array / object field count.</td></tr>
+<tr><td><code>push</code></td><td><code>array</code> <code>item</code> <code>index?</code></td><td><code>void</code></td><td>Appends an item to a specified or last item of an array</td></tr>
+<tr><td><code>pop</code></td><td><code>array</code> <code>index?</code></td><td><code>void</code></td><td>Removes the specified or last item of an array</td></tr>
+<tr><td><code>input</code></td><td>(none)</td><td><code>string</code></td><td>Reads a line from standard input (newline trimmed).</td></tr>
+<tr><td><code>assert</code></td><td><code>bool</code></td><td><code>void</code></td><td>Panics if argument is false.</td></tr>
+<tr><td><code>exit</code></td><td><code>int?</code></td><td>(never)</td><td>Terminates process with optional integer code.</td></tr>
+<tr><td><code>ceil</code></td><td><code>number</code></td><td><code>int</code></td><td>Ceiling of numeric argument.</td></tr>
+<tr><td><code>sin</code></td><td><code>number</code></td><td><code>float</code></td><td>Sine (radians).</td></tr>
+<tr><td><code>cos</code></td><td><code>number</code></td><td><code>float</code></td><td>Cosine (radians).</td></tr>
+<tr><td><code>tan</code></td><td><code>number</code></td><td><code>float</code></td><td>Tangent (radians).</td></tr>
+<tr><td><code>log</code></td><td><code>base, value</code></td><td><code>float</code></td><td>Logarithm of <code>value</code> to given <code>base</code>.</td></tr>
+<tr><td><code>exp</code></td><td><code>value</code></td><td><code>float</code></td><td>e^value.</td></tr>
+<tr><td><code>random</code></td><td>(none)</td><td><code>float</code></td><td>Pseudo‑random float in [0,1].</td></tr>
+<tr><td><code>randomInt</code></td><td><code>min, max</code></td><td><code>int</code></td><td>Pseudo‑random integer in inclusive range.</td></tr>
+<tr><td><code>sleep</code></td><td><code>ms</code></td><td><code>void</code></td><td>Sleeps current thread for milliseconds.</td></tr>
+<tr><td><code>date</code></td><td>(none)</td><td><code>string</code></td><td>Current date (YYYY‑MM‑DD) naive calculation.</td></tr>
+<tr><td><code>timestamp</code></td><td>(none)</td><td><code>int</code></td><td>Milliseconds since Unix epoch.</td></tr>
+<tr><td><code>timestampSeconds</code></td><td>(none)</td><td><code>int</code></td><td>Seconds since Unix epoch.</td></tr>
+<tr><td><code>loadLibrary</code></td><td><code>string</code></td><td><code>void</code></td><td>Loads a .dll or .llb library.</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<div class="status">
+Status: Draft baseline for v1.0.0 core.
+</div>
