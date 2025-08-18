@@ -2,8 +2,8 @@
   <img src="logo.png" width="200" alt="LIA Logo">
   <div>
     <h1>The LIA Programming  Language v1.0.0 Specification [DRAFT]</h1>
-    Revision: 2<br>
-    Release Date: 14/8/2025<br>
+    Revision: 3<br>
+    Release Date: 18/8/2025<br>
     Author: Lawton "Lawtro" Kelly
   </div>
 </div>
@@ -49,31 +49,37 @@ All examples are illustrative; if an example conflicts with a formal rule, the r
 ## 1. Lexical Structure
 Character set: ASCII (string contents treated as raw bytes)  
 Whitespace: space, tab, CR, LF (insignificant outside string literals)  
-Comments: `//` to end of line  
+Comments: 
+`//` to end of line  
+`/*` to next `*/` comment closure
 
 ### 1.1 Identifiers
 Pattern: `[A-Za-z_][A-Za-z0-9_]*`  
 Case-sensitive. Reserved keywords excluded.
 
 ### 1.2 Keywords
-`function, class, var, const, return, if, else, while, free, import, true, false, null, void, bool, int, float, string`
+`function, class, new, var, const, return, if, else, for, loop, while, break, skip, free, import, true, false, null, void, bool, int, float, string`
+
+note that keywords and their ailes arent particularly reserved when defining variables
 
 #### Aliases
 `function`: `fn, fun, func, def`  
 `var`: `let, local`  
-`const`: `final` (the word `const` itself)  
+`const`: `final`  
+`break`: `stop`
+`skip`: `continue, next`
 `free`: `delete, pop`  
 `null`: `nul`  
 `bool`: `boolean`
 
 ### 1.3 Literals
-- Integer: decimal digits (`123`). Parsed as signed 32‑bit unless a cast is applied.
+- Integer: decimal digits (`123`).
 - Float: digits with a decimal point (`1.0`, `0.5`).
-- String: `"..."` (no escape sequences; backslashes are literal).
+- String: `"` until next `"` (new lines do not close stings).
 - Boolean: `true` / `false`.
-- Null: `null` (internally `Type::Null`).
-- Object literal: `{ <field_list> }`.
-- Array literal: `[<type>? element (, element)*]` (optional leading inline type token).
+- Null: `null`.
+- Object literal: `{ <type>? <identifier>: <value> (, <type>? <identifier>: <value>)*, }`.
+- Array literal: `<type>? [element (, element)*]` (optional leading inline type token).
 
 ### 1.4 Operators
 - Arithmetic: `+ - * /`
@@ -120,22 +126,26 @@ Composite:
 
 ## 3. Variables
 Syntax:
-`var <type> <name> (= expression)?`
-`var <type> <name>[index]?` (array element assignment after declaration uses assignment)
+`var <type>? <name> (= expression)?`
+`var <type>? <name>[index]?` (array element assignment after declaration uses assignment)
 `const` modifier is parsed; enforcement of immutability is nominal.
+`const <type>? <name> (= expression)?` (var can be infered)
+`global var <type>? <name> (= expression)?`
 
+Variables with no declared type defalt to `any`
 Uninitialized variables get `null`.
 
 ## 4. Statements
-- Variable declaration
 - Expression statement
 - `if (expr) { block } (else { block })?`
 - `while (expr) { block }`
+- `loop (num) { block }`
+- `for for (init; condition; increment) { block }`
 - `return expression`
 - `free(identifier (, identifier)*)`
 - `import "path.lia" | "lib.llb"`
-
-Blocks: `{ statement* }` produce an internal `Program` node.
+- `break` (breaks out of loops)
+- `skip` (skips current loop)
 
 ## 5. Functions
 Syntax:
@@ -152,27 +162,65 @@ No overloading or default parameters.
 ## 6. Objects
 Literal:
 `{ <type> <fieldName>: <expression>, ... }`
-Semantics: constructs `AST::Object(Vec<(Type,String,AST)>)`.
+element type is either explicitly defined or inferred as `Any`.
 
 ## 7. Arrays
 Two forms:
 - Indexed identifiers: `arr[i]`
-- Literals: `[ <optionalLeadingType> elem1, elem2, ... ]`
-Stored as `AST::Array(Type, Vec<AST>)`; element type is either explicit leading type token or inferred as `Any`.
+- Literals: `<optionalLeadingType> [ elem1, elem2, ... ]`
+
+element type is either explicitly defined or inferred as `Any`.
 
 ## 8. Casting
-Prefix type token followed by a parenthesized expression: `int32(expr)` is parsed as a call‑style cast (`AST::Call("int32", [expr])`).
+Prefix type token followed by a parenthesized expression: `<type> (expr)`
 
 ## 9. Import System
+
+`import "<.lia/.llb/.dll path>" (as <identifier>)?`
+
 `import "relative/or/absolute/path.lia"`  
 - Loads and tokenizes file; AST is inlined (recursive parse).  
-Optional (commented / experimental) dynamic library form: `import "library.llb"`.
+
+`import "library.llb"`
+- loads a LIA-lang library.
+
+`import "library.dll"`
+- loads a dynamic link library
+
+`import "library.lia" as lib`
+- import content is placed in an object instead of global scope
 
 Search path: relative to current working directory. No cycle detection.
 
 ## 10. Memory Management
 Once a scope is exited the scope and its contents are removed and freed from memory.
 The `free()` function removes the inputed variable from the scope and frees the memory.
+
+### 10.1 Memory Allocation Model
+
+#### Stack Allocation
+- Primitive types (int, float, bool)
+- Function parameters and local variables
+- Automatically freed on scope exit
+
+#### Heap Allocation  
+- Dynamic arrays and strings
+- Objects and complex data structures
+- Subject to implementation-defined size limits
+
+#### Allocation Behavior
+| data type | alocation location |
+| -------- | -------- |
+| `int` | stack |
+| `float` | stack |
+| `bool` | stack |
+| `null` | stack |
+| `void` | stack |
+| `string` (< 32 bytes) | stack |
+| `string` (> 32 bytes) | heap |
+| Arrays | heap |
+| Objects | heap |
+| Classes | heap |
 
 ## 11. Runtime / Execution Model
 LIA-lang is an interpreted programing language meaning execution is handeled by a program that reads in the code and executes it based on its operation.
@@ -183,6 +231,14 @@ In the case of a seperate interpreter `.lia` files are parsed into unserialised 
 A seperate interpreter will deserialise `.ast` files before executing theem.
 An embeded interpreter will deserialise the LIA bytecode appended to the end of its file after the `"LIA\xFF` header before executing it.
 
+| Diagram of Direct Interpretation |
+|------------------------|
+| `Tokeniser --> Parser/Assembler --> Interpreter` |
+
+| Diagram of Copilation |
+|------------------------|
+| `Tokeniser --> Parser/Assembler --> Serialiser --> Embeder/Compiler` |
+
 ## 12. Error Handling
 Categories:
 
@@ -192,7 +248,7 @@ Categories:
 | Syntax   | Unexpected token / structure | Abort parse with location |
 | Type     | Incompatible assignment | Diagnostic; may abort validation |
 | Runtime (non‑fatal) | Missing library function | Report; attempt continue |
-| Runtime (fatal) | Null dereference (if implemented), internal panic | Terminate with error code |
+| Runtime (fatal) | Calling an undefined function | Terminate with error code |
 
 Standard diagnostic format (illustrative):
 ```
@@ -247,7 +303,7 @@ size             ::= integer_literal
 ```
 
 ## 14. Operator Precedence (High → Low)
-1. Unary (`+ - (cast)`)
+1. Unary (`++ --`)
 2. Multiplicative (`* /`)
 3. Additive (`+ -`)
 4. Equality (`==`)
@@ -264,6 +320,33 @@ size             ::= integer_literal
 
 ## 16. Compliance Notes
 Where implementation and this document differ (e.g. disabled member access), the source code is authoritative until harmonised.
+
+## 17. Native Functions (Built‑ins)
+The following native (built‑in) global functions are provided by the reference interpreter. Availability or exact behavior may vary in other runtimes.
+
+| Function | Args | Returns | Description |
+| -------- | ---- | ------- | ----------- |
+| `println` | `any*` | `void` | Prints each argument on its own line (stringifies values). |
+| `print` | `any*` | `void` | Prints arguments without automatic newline separation. |
+| `len` | `value` | `int` | Length of string / array / object field count. |
+| `push` | `array` `item` `index?` | `void` | Appends an item to a specified or last item of an arry |
+| `pop` | `array` `index?` | `void` | Removes the specified or last item of an array |
+| `input` | (none) | `string` | Reads a line from standard input (newline trimmed). |
+| `assert` | `bool` | `void` | Panics if argument is false. |
+| `exit` | `int?` | (never) | Terminates process with optional integer code. |
+| `ceil` | `number` | `int` | Ceiling of numeric argument. |
+| `sin` | `number` | `float` | Sine (radians). |
+| `cos` | `number` | `float` | Cosine (radians). |
+| `tan` | `number` | `float` | Tangent (radians). |
+| `log` | `base, value` | `float` | Logarithm of `value` to given `base`. |
+| `exp` | `value` | `float` | e^value. |
+| `random` | (none) | `float` | Pseudo‑random float in [0,1]. |
+| `randomInt` | `min, max` | `int` | Pseudo‑random integer in inclusive range. |
+| `sleep` | `ms` | `void` | Sleeps current thread for milliseconds. |
+| `date` | (none) | `string` | Current date (YYYY‑MM‑DD) naive calculation. |
+| `timestamp` | (none) | `int` | Milliseconds since Unix epoch. |
+| `timestampSeconds` | (none) | `int` | Seconds since Unix epoch. |
+| `loadLibrary` | `string` | `void` | Loads a .dll or .llb library. |
 
 ---
 Status: Draft baseline for v1.0.0 core.
