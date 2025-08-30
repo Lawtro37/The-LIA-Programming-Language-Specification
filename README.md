@@ -2,13 +2,48 @@
   <img src="logo.png" width="200" alt="LIA Logo">
   <div>
     <h1>The LIA Programming  Language v1.0.0 Specification [DRAFT]</h1>
-    Revision: 3<br>
+    Revision: 4<br>
     Release Date: 18/8/2025<br>
     Author: Lawton "Lawtro" Kelly
   </div>
 </div>
 
----
+
+## Table of Contents
+
+1. [Introduction](#introduction)
+2. [Lexical Structure](#1-lexical-structure)
+	- [Identifiers](#11-identifiers)
+	- [Keywords](#12-keywords)
+	- [Aliases](#aliases)
+	- [Literals](#13-literals)
+	- [Operators](#14-operators)
+	- [Delimiters](#15-delimiters)
+3. [Types](#2-types)
+	- [Sub-type Aliases](#sub-type-aliases)
+4. [Variables](#3-variables)
+5. [Statements](#4-statements)
+6. [Functions](#5-functions)
+7. [Objects](#6-objects)
+8. [Arrays](#7-arrays)
+9. [Classes](#8-classes)
+10. [Casting](#9-casting)
+11. [Import System](#10-import-system)
+12. [Memory Management](#11-memory-management)
+	- [Memory Allocation Model](#101-memory-allocation-model)
+13. [Runtime / Execution Model](#12-runtime--execution-model)
+	- [Execution Model](#execution-model)
+14. [Error Handling](#13-error-handling)
+15. [Grammar (EBNF Approximation)](#14-grammar-ebnf-approximation)
+16. [Operator Precedence](#15-operator-precedence-high--low)
+17. [Native Interop](#16-native-interop)
+18. [Native Functions (Built-ins)](#17-native-functions-built-ins)
+19. [.AST Bytecode Format](#18-ast-bytecode-format)
+	- [Headers](#181-headers)
+	- [Instructions](#182-instructions)
+	- [Types](#183-types)
+	- [Literal Values](#184-literal-values)
+20. [Implementation Recommendations](#19-implementation-recomendations)
 
 This document describes the core language specifications and not particularly the current state of LIA-lang. This is simpley the target of what LIA-lang should be.
 
@@ -103,10 +138,9 @@ Primitive core:
 - `any` (internal fallback / inference default)
 
 `S` = storage size in bytes; default size when omitted is 32 bits.
+Default type size: 32 bits (e.g. `int` = `int32`).
 
-#### Sub‑type Aliases
-Default integer width: 32 bits (alias `int` = `int32`).
-
+### Sub‑type Aliases
 Integers (signed / unsigned):
 - 8:  `int8,  i8,  byte` / `uint8,  u8,  ubyte`
 - 16: `int16, i16, short` / `uint16, u16, ushort`
@@ -162,19 +196,27 @@ No overloading or default parameters.
 ## 6. Objects
 Literal:
 `{ <type> <fieldName>: <expression>, ... }`
-element type is either explicitly defined or inferred as `Any`.
+Element type is either explicitly defined or inferred as `Any`.
 
 ## 7. Arrays
 Two forms:
 - Indexed identifiers: `arr[i]`
 - Literals: `<optionalLeadingType> [ elem1, elem2, ... ]`
 
-element type is either explicitly defined or inferred as `Any`.
+Element type is either explicitly defined or inferred as `Any`.
+Arrays are to be bounds checked.
 
-## 8. Casting
+## 8. Classes
+`class <classname> (args?*) { block }`
+
+The main code block acts as the constructor for classes in LIA-lang.
+Anything defined in the scope of a class becomes acsessable from the class object.
+Classes can be instantiated as so `new <classname> (args?*)`.
+
+## 9. Casting
 Prefix type token followed by a parenthesized expression: `<type> (expr)`
 
-## 9. Import System
+## 10. Import System
 
 `import "<.lia/.llb/.dll path>" (as <identifier>)?`
 
@@ -192,7 +234,7 @@ Prefix type token followed by a parenthesized expression: `<type> (expr)`
 
 Search path: relative to current working directory. No cycle detection.
 
-## 10. Memory Management
+## 11. Memory Management
 Once a scope is exited the scope and its contents are removed and freed from memory.
 The `free()` function removes the inputed variable from the scope and frees the memory.
 
@@ -222,7 +264,7 @@ The `free()` function removes the inputed variable from the scope and frees the 
 | Objects | heap |
 | Classes | heap |
 
-## 11. Runtime / Execution Model
+## 12. Runtime / Execution Model
 LIA-lang is an interpreted programing language meaning execution is handeled by a program that reads in the code and executes it based on its operation.
 LIA uses a Tree‑walk interpreter that executes assembled LIA code.
 LIA code is assembled into an abstract stynax tree and/or serialised into `.ast` file before execution or being bundeled with an interpreter.
@@ -235,11 +277,22 @@ An embeded interpreter will deserialise the LIA bytecode appended to the end of 
 |------------------------|
 | `Tokeniser --> Parser/Assembler --> Interpreter` |
 
-| Diagram of Copilation |
-|------------------------|
-| `Tokeniser --> Parser/Assembler --> Serialiser --> Embeder/Compiler` |
+### Execution Model
 
-## 12. Error Handling
+#### Direct Interpretation
+```mermaid
+flowchart TB
+	Tokeniser --> Parser/Assembler --> Validator --> Optimiser --> Interpreter
+```
+
+#### Copilation
+
+```mermaid
+flowchart TB
+	Tokeniser --> Parser/Assembler --> Validator --> Optimiser --> Serialiser --> Embeder/Compiler
+```
+
+## 13. Error Handling
 Categories:
 
 | Category | Examples | Handling (Typical) |
@@ -259,7 +312,7 @@ at <FILEPATH>:<LINE>
 
 Fatal runtime errors terminate the process with an implementation‑defined exit code. Non‑fatal runtime issues may be logged to stderr or console depending on runtime flags.
 
-## 13. Grammar (EBNF Approximation)
+## 14. Grammar (EBNF Approximation)
 ```
 program          ::= statement*
 statement        ::= function_decl
@@ -302,24 +355,20 @@ type             ::= "int" size? | "uint" size? | "float" size? | "char" size? |
 size             ::= integer_literal
 ```
 
-## 14. Operator Precedence (High → Low)
+## 15. Operator Precedence (High → Low)
 1. Unary (`++ --`)
 2. Multiplicative (`* /`)
 3. Additive (`+ -`)
 4. Equality (`==`)
 5. Assignment (`=` right-associative)
 
-## 15. Native Interop
+## 16. Native Interop
 #### `.dll` files:
 .dll files can be loaded via `import` or the `loadLibrary()` native function
 .dll public functions will be converted to work with LIA-lang placed in the global scope
 #### `.llb` files:
 .llb files can be loaded via `import` or the `loadLibrary()` native function and are esentualy librarys specificly made for LIA-lang.
 .llb files are techincly just .dll files under the hood just with specal functionality to interface with LIA-lang
-
-
-## 16. Compliance Notes
-Where implementation and this document differ (e.g. disabled member access), the source code is authoritative until harmonised.
 
 ## 17. Native Functions (Built‑ins)
 The following native (built‑in) global functions are provided by the reference interpreter. Availability or exact behavior may vary in other runtimes.
@@ -347,6 +396,61 @@ The following native (built‑in) global functions are provided by the reference
 | `timestamp` | (none) | `int` | Milliseconds since Unix epoch. |
 | `timestampSeconds` | (none) | `int` | Seconds since Unix epoch. |
 | `loadLibrary` | `string` | `void` | Loads a .dll or .llb library. |
+
+## 18. .AST Bytecode Format
+
+### 18.1 Headers
+
+| header | use |
+| ------ | ------ |
+| `LIA\xFF` | Indicates the start of AST bytecode when embeded into an executable. |
+| `0xAB` | Magic number. |
+| `0x01` | Version header (for future compatability) |
+
+### 18.2 Instructions
+| Tag | Instruction | Data Structure |
+| --- | ----------- | ---- |
+| `0x01` | `Program(instructions)` | `[number Of instructions][Instructions*]` |
+| `0x02` | `Decloration(Identifier, Type, Value)` | `[Identifier][Type][Value]` |
+| `0x03` | `Assignment(Identifier, Value)` | `[Identifier][Value]` |
+| `0x04` | `If(condition, body, else_body)` | `[BinaryOp(condition)][Program(body)](else ? 1[Program(else_body)] : 0)` |
+| `0x05` | `Function(Identifier, Type, args, body)` | `[Identifier][Type][length of args (as u32)][Argument(args)?*][Program(body)]` |
+| `0x06` | `Argument(identifier, Type)` | `[string(identifier)][Type]` |
+| `0x07` | `Call(identifier, args)` | `[string(identifier)][length of args (as u32)][Argument(args)?*]` |
+| `0x08` | `Return(Value)` | `[Value]` |
+| `0x09` | `BinaryOp(operation, left, right)` | `[string(operation)][AST(left)][AST(right)]` |
+| `0x0A` | `UnaryOp(operation, Value)` | `[string(operation)][Value]` |
+| `0x0B` | `Literal(Type, Value)` | `[Type][Value]` |
+| `0x0C` | `Identifier(identifier, index)` | `[string(identifier)](index ? 1[AST(index)] : 0)` |
+| `0x0D` | `Array(Type, items)` | `[Type][lenth of items (as u32)][Value(items)?*]` |
+| `0x0E` | `Object(fields<Type, indentifiers, Value)` | `[length of fields]([Type][Identifier(indentifiers)][Value])?*` |
+| `0x0F` | `While(condition, body)` | `[BinaryOp(condition)][Program(body)]` |
+| `0x10` | `Free(Identifier)` | `[length of identifiers (as u32)][Identifier?*]` |
+| `0x11` | `Class(Identifier, args, body)` | `[Identifier][length of args (as u32)][Argument(args)?*][Program(body)]` |
+| `0x12` | `NewInstance(Identifier, args)` | `[Identifier][length of args (as u32)][Argument(args)?*]` |
+
+### 18.3 Types
+| Tag | Type | Data Structure |
+| --- | ---- | -------------- |
+| `0x01` | `Int(signed, size)` | `[signed (0/1 | u8)][size (u8)]` |
+| `0x02` | `Float(size)` | `[size (u8)]` |
+| `0x04` | `String` | NA |
+| `0x05` | `Bool` | NA |
+| `0x04` | `Void` | NA |
+| `0x04` | `Null` | NA |
+| `0x04` | `Any` | NA |
+| `0x04` | `Class(identifier)` | `[String(identifier)]` |
+
+### 18.4 Literal Values
+| Type | Data Structure |
+| ---- | -------------- |
+| `Int(signed, size)` | `[<u/i><size>]` |
+| `Float(size)` | `[f<size>]` |
+| `Bool` | `[0/1]` |
+| `String` | `[string length][string]` |
+
+## 19. Implementation Recomendations
+- Implementations of LIA-lang should be memory safe.
 
 ---
 Status: Draft baseline for v1.0.0 core.
